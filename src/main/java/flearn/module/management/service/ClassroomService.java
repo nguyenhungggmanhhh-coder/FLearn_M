@@ -33,6 +33,8 @@ public interface ClassroomService {
 
     void softDeleteClass(Integer classId, User teacher);
 
+    void toggleJoinable(Integer classId, User teacher);
+
     void assignTeacher(Integer classId, @Valid AssignTeacherRequest request);
 
 }

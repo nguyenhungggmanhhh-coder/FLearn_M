@@ -61,6 +61,24 @@ public class TeacherClassController {
         return "redirect:/teacher/classes";
     }
 
+    @PostMapping("/classes/{id}/toggle-joinable")
+    public String toggleJoinable(@PathVariable Integer id,
+                                 @AuthenticationPrincipal CustomUserDetails userDetails,
+                                 RedirectAttributes redirectAttributes,
+                                 jakarta.servlet.http.HttpServletRequest request) {
+        try {
+            classroomService.toggleJoinable(id, userDetails.getUser());
+            redirectAttributes.addFlashAttribute("successMsg", "Đã thay đổi trạng thái khóa/mở mã tham gia lớp.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        String referer = request.getHeader("Referer");
+        if (referer != null && !referer.isEmpty()) {
+            return "redirect:" + referer;
+        }
+        return "redirect:/teacher/classes/" + id;
+    }
+
     @PostMapping("/classes/{id}/delete")
     public String delete(@PathVariable Integer id,
                          @AuthenticationPrincipal CustomUserDetails userDetails,

@@ -51,6 +51,10 @@ public class Classroom {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "[IsJoinable]", nullable = false)
+    @Builder.Default
+    private Boolean isJoinable = true;
+
     @Column(name = "[StartDate]")
     private LocalDate startDate;
 
