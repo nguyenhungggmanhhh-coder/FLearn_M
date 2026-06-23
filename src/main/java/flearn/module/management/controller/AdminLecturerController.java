@@ -21,9 +21,14 @@ public class AdminLecturerController {
     @GetMapping
     public String lecturers(@RequestParam(required = false) String keyword, Model model) {
         model.addAttribute("teachers", userService.searchUsersByRole(Role.TEACHER, keyword));
-        model.addAttribute("createTeacherRequest", new CreateTeacherRequest());
         model.addAttribute("keyword", keyword);
         return "admin/lecturers/list";
+    }
+
+    @GetMapping("/create")
+    public String createTeacherForm(Model model) {
+        model.addAttribute("createTeacherRequest", new CreateTeacherRequest());
+        return "admin/lecturers/create";
     }
 
     @PostMapping("/create")
@@ -32,13 +37,14 @@ public class AdminLecturerController {
                                 RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("errorMsg", bindingResult.getFieldError().getDefaultMessage());
-            return "redirect:/admin/lecturers";
+            return "redirect:/admin/lecturers/create";
         }
         try {
             userService.createTeacher(request);
             redirectAttributes.addFlashAttribute("successMsg", "Da tao tai khoan teacher thanh cong.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
+            return "redirect:/admin/lecturers/create";
         }
         return "redirect:/admin/lecturers";
     }

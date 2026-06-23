@@ -175,6 +175,14 @@ public class ClassroomServiceImpl implements ClassroomService {
 
     @Override
     @Transactional
+    public void toggleJoinable(Integer classId, User teacher) {
+        Classroom classroom = findTeacherClassById(classId, teacher);
+        classroom.setIsJoinable(!classroom.getIsJoinable());
+        classroomRepository.save(classroom);
+    }
+
+    @Override
+    @Transactional
     public void assignTeacher(Integer classId, AssignTeacherRequest request) {
         Classroom classroom = findClassById(classId);
         User teacher = userRepository.findById(request.getTeacherId())

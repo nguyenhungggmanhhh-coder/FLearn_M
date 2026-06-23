@@ -21,6 +21,7 @@ public class ClassroomResponse {
     private String inviteCode;
     private String status;
     private Boolean isActive;
+    private Boolean isJoinable;
     private java.time.LocalDate startDate;
     private java.time.LocalDate endDate;
     private Date createdAt;
