@@ -34,9 +34,20 @@ public class QuestionRequest {
     @Size(max = 500, message = "Đáp án D không được vượt quá 500 ký tự.")
     private String optionD;
 
-    @NotBlank(message = "Đáp án đúng không được để trống.")
-    @Pattern(regexp = "^(A|B|C|D|TRUE|FALSE)$", message = "Đáp án đúng không hợp lệ.")
+    /**
+     * Đáp án đúng:
+     * - MULTIPLE_CHOICE: "A"|"B"|"C"|"D"
+     * - TRUE_FALSE: "TRUE"|"FALSE"
+     * - MULTI_SELECT: [FEAT-02] VD "A,C" hoặc "A,B,D"
+     * - ESSAY: [FEAT-02] để trống hoặc null
+     */
+    @Pattern(regexp = "^(A|B|C|D|TRUE|FALSE|([ABCD](,[ABCD]){0,3}))?$",
+             message = "Đáp án không hợp lệ. Cho phép: A, B, C, D, TRUE, FALSE, hoặc kết hợp A,B,C cho multi-select.")
     private String correctAnswer;
+
+    /** [FEAT-02] Đáp án mẫu cho câu tự luận. */
+    @Size(max = 5000, message = "Đáp án mẫu quá dài.")
+    private String modelAnswer;
 
     private Integer orderIndex;
 }

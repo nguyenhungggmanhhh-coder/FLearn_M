@@ -16,6 +16,8 @@ public interface ClassroomMapper {
     @Mapping(target = "courseId", source = "course.id")
     @Mapping(target = "courseName", source = "course.courseName")
     @Mapping(target = "courseCode", source = "course.courseCode")
+    @Mapping(target = "inviteCodeVisible", source = "inviteCodeVisible")
+    @Mapping(target = "inviteCodeGeneratedAt", source = "inviteCodeGeneratedAt")
     ClassroomResponse toResponse(Classroom classroom);
 
     List<ClassroomResponse> toResponseList(List<Classroom> classrooms);

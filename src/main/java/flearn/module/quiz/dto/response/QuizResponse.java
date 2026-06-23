@@ -28,5 +28,7 @@ public class QuizResponse {
     private Integer videoTimestamp; // giây trong video, null = không gate
     private boolean deadlinePassed;
     private long submittedAttempts;
+    /** [FEAT-01] Số câu hỏi rút ngẫu nhiên; null = dùng tất cả. */
+    private Integer questionPoolSize;
     private List<QuestionResponse> questions;
 }

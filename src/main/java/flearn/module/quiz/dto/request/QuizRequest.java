@@ -40,4 +40,9 @@ public class QuizRequest {
 
     @Min(value = 0, message = "Mốc thời gian video không được âm.")
     private Integer videoTimestamp; // giây
+
+    /** [FEAT-01] Số câu hỏi được rút ngẫu nhiên từ ngân hàng. null = dùng tất cả. */
+    @Min(value = 1, message = "Số câu rút ngẫu nhiên tối thiểu là 1.")
+    @Max(value = 1000, message = "Số câu rút ngẫu nhiên tối đa là 1000.")
+    private Integer questionPoolSize;
 }

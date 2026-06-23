@@ -238,6 +238,7 @@ public class QuizServiceImpl implements QuizService {
         quiz.setShuffleAnswers(Boolean.TRUE.equals(request.getShuffleAnswers()));
         quiz.setMaxAttempts(request.getMaxAttempts() == null ? 1 : request.getMaxAttempts());
         quiz.setVideoTimestamp(request.getVideoTimestamp()); // null = không gate
+        quiz.setQuestionPoolSize(request.getQuestionPoolSize()); // [FEAT-01] null = dùng tất cả
     }
 
     private void applyQuestion(Question question, QuestionRequest request) {
@@ -245,13 +246,14 @@ public class QuizServiceImpl implements QuizService {
         question.setType(type);
         question.setQuestionText(request.getQuestionText());
         question.setOrderIndex(request.getOrderIndex() == null ? 0 : request.getOrderIndex());
+        question.setModelAnswer(request.getModelAnswer()); // [FEAT-02] Đáp án mẫu cho tự luận
 
         if (type == QuestionType.TRUE_FALSE) {
             question.setOptionA("Đúng");
             question.setOptionB("Sai");
             question.setOptionC(null);
             question.setOptionD(null);
-            String correct = request.getCorrectAnswer().trim().toUpperCase();
+            String correct = request.getCorrectAnswer() == null ? "" : request.getCorrectAnswer().trim().toUpperCase();
             if (!correct.equals("TRUE") && !correct.equals("FALSE")) {
                 throw new BusinessException("Câu hỏi Đúng/Sai chỉ nhận đáp án TRUE hoặc FALSE.");
             }
@@ -259,19 +261,50 @@ public class QuizServiceImpl implements QuizService {
             return;
         }
 
+        // [FEAT-02] ESSAY – không cần options và correctAnswer
+        if (type == QuestionType.ESSAY) {
+            question.setOptionA(null);
+            question.setOptionB(null);
+            question.setOptionC(null);
+            question.setOptionD(null);
+            question.setCorrectAnswer(null); // Chấm thủ công
+            return;
+        }
+
+        // MULTIPLE_CHOICE và MULTI_SELECT đều cần 4 options
         requireOption(request.getOptionA(), "Đáp án A không được để trống.");
         requireOption(request.getOptionB(), "Đáp án B không được để trống.");
         requireOption(request.getOptionC(), "Đáp án C không được để trống.");
         requireOption(request.getOptionD(), "Đáp án D không được để trống.");
-        String correct = request.getCorrectAnswer().trim().toUpperCase();
-        if (!List.of("A", "B", "C", "D").contains(correct)) {
-            throw new BusinessException("Câu hỏi trắc nghiệm chỉ nhận đáp án đúng A, B, C hoặc D.");
-        }
         question.setOptionA(request.getOptionA());
         question.setOptionB(request.getOptionB());
         question.setOptionC(request.getOptionC());
         question.setOptionD(request.getOptionD());
-        question.setCorrectAnswer(correct);
+
+        if (type == QuestionType.MULTIPLE_CHOICE) {
+            String correct = request.getCorrectAnswer() == null ? "" : request.getCorrectAnswer().trim().toUpperCase();
+            if (!List.of("A", "B", "C", "D").contains(correct)) {
+                throw new BusinessException("Câu hỏi trắc nghiệm chỉ nhận đáp án đúng A, B, C hoặc D.");
+            }
+            question.setCorrectAnswer(correct);
+        } else if (type == QuestionType.MULTI_SELECT) {
+            // [FEAT-02] Đa đáp án: "A,C" hoặc "A,B,D"
+            if (request.getCorrectAnswer() == null || request.getCorrectAnswer().isBlank()) {
+                throw new BusinessException("Câu hỏi nhiều đáp án phải có ít nhất 1 đáp án đúng.");
+            }
+            String[] parts = request.getCorrectAnswer().trim().toUpperCase().split(",");
+            for (String part : parts) {
+                if (!List.of("A", "B", "C", "D").contains(part.trim())) {
+                    throw new BusinessException("Đáp án '" + part.trim() + "' không hợp lệ. Chỉ nhận A, B, C, D.");
+                }
+            }
+            // Lưu dạng chuẩn: sắp xếp và nối bằng dấu phẩy
+            String normalized = java.util.Arrays.stream(parts)
+                    .map(String::trim)
+                    .sorted()
+                    .collect(java.util.stream.Collectors.joining(","));
+            question.setCorrectAnswer(normalized);
+        }
     }
 
     private void requireOption(String value, String message) {
@@ -289,7 +322,12 @@ public class QuizServiceImpl implements QuizService {
         }
         if (includeQuestions) {
             List<Question> questions = new ArrayList<>(questionRepository.findByQuizOrderByOrderIndexAscQuestionIdAsc(quiz));
-            if (Boolean.TRUE.equals(quiz.getShuffleQuestions())) {
+            // [FEAT-01] Rút ngẫu nhiên từ ngân hàng đề nếu questionPoolSize được cấu hình
+            if (quiz.getQuestionPoolSize() != null && quiz.getQuestionPoolSize() > 0
+                    && questions.size() > quiz.getQuestionPoolSize()) {
+                Collections.shuffle(questions);
+                questions = new ArrayList<>(questions.subList(0, quiz.getQuestionPoolSize()));
+            } else if (Boolean.TRUE.equals(quiz.getShuffleQuestions())) {
                 Collections.shuffle(questions);
             }
             response.setQuestions(questions.stream()
@@ -344,14 +382,36 @@ public class QuizServiceImpl implements QuizService {
             return new ScoreSummary(0.0, 0, 0);
         }
         int correctCount = 0;
-        for (Question question : questions) {
+        // Chỉ tính điểm các câu có thể tự chấm (loại ESSAY ra)
+        List<Question> gradableQuestions = questions.stream()
+                .filter(q -> q.getType() != QuestionType.ESSAY)
+                .toList();
+        if (gradableQuestions.isEmpty()) {
+            // Toàn bộ là tự luận – chờ chấm thủ công
+            return new ScoreSummary(0.0, 0, questions.size());
+        }
+        for (Question question : gradableQuestions) {
             String answer = answers == null ? null : answers.get("question_" + question.getQuestionId());
-            if (answer != null && answer.trim().equalsIgnoreCase(question.getCorrectAnswer())) {
-                correctCount++;
+            if (answer == null) continue;
+            if (question.getType() == QuestionType.MULTI_SELECT) {
+                // [FEAT-02] So sánh tập hợp đáp án, không phụ thuộc thứ tự
+                String[] submitted = answer.trim().toUpperCase().split(",");
+                String[] correct = question.getCorrectAnswer() == null ? new String[0]
+                        : question.getCorrectAnswer().split(",");
+                java.util.Set<String> submittedSet = new java.util.HashSet<>(java.util.Arrays.asList(submitted));
+                java.util.Set<String> correctSet = new java.util.HashSet<>(java.util.Arrays.asList(correct));
+                if (submittedSet.equals(correctSet)) {
+                    correctCount++;
+                }
+            } else {
+                // TRUE_FALSE và MULTIPLE_CHOICE – so sánh trực tiếp
+                if (answer.trim().equalsIgnoreCase(question.getCorrectAnswer())) {
+                    correctCount++;
+                }
             }
         }
-        double score = Math.round(((double) correctCount / questions.size()) * MAX_SCORE * 10.0) / 10.0;
-        return new ScoreSummary(score, correctCount, questions.size());
+        double score = Math.round(((double) correctCount / gradableQuestions.size()) * MAX_SCORE * 10.0) / 10.0;
+        return new ScoreSummary(score, correctCount, gradableQuestions.size());
     }
 
     private Date resolveStartedAt(Map<String, String> answers, Date fallback) {

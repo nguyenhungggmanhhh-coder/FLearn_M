@@ -42,6 +42,20 @@ public class Classroom {
     @Column(name = "[InviteCode]", unique = true, nullable = false, length = 10)
     private String inviteCode;
 
+    /**
+     * [FEAT-04] Kiểm soát hiển thị mã mời:
+     * - inviteCodeVisible = true: Admin/Teacher đã bật hiển
+     * - inviteCodeGeneratedAt: Thời điểm bật – frontend tự ẩn sau 15 phút
+     * Logic hiển: visible=true AND now &lt; generatedAt + 15 phút
+     */
+    @Column(name = "[InviteCodeVisible]", nullable = false)
+    @Builder.Default
+    private Boolean inviteCodeVisible = false; // Mặc định ẩn, chỉ bật khi cần show
+
+    @Column(name = "[InviteCodeGeneratedAt]")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date inviteCodeGeneratedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "[Status]", length = 20)
     @Builder.Default

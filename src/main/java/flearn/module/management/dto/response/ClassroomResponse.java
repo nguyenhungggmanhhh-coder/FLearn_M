@@ -29,4 +29,10 @@ public class ClassroomResponse {
     private Integer courseId;
     private String courseName;
     private String courseCode;
+
+    /** [FEAT-04] Trạng thái hiển thị mã mời (admin/teacher toggle). */
+    private Boolean inviteCodeVisible;
+
+    /** [FEAT-04] Thời điểm mã mời được bật gần nhất – dùng cho countdown 15 phút. */
+    private Date inviteCodeGeneratedAt;
 }

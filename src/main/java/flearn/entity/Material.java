@@ -48,6 +48,16 @@ public class Material {
     @Builder.Default
     private Boolean published = false;
 
+    /** [TIME-GATE] Tài liệu chỉ hiện sau mốc này. null = hiện ngay. */
+    @Column(name = "[AvailableFrom]")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date availableFrom;
+
+    /** Hạn chồt sinh viên phải hoàn thành xem tài liệu. */
+    @Column(name = "[Deadline]")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deadline;
+
     @Column(name = "[CreatedAt]", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;

@@ -24,4 +24,21 @@ public class EnrollmentResponse {
     private Date approvedAt;
     private Date rejectedAt;
     private Date removedAt;
+
+    /** Tiến độ học: tổng số tài liệu đã published trong lớp. */
+    private int totalMaterials;
+
+    /** Số tài liệu sinh viên đã xem. */
+    private int viewedMaterials;
+
+    /** Số tài liệu còn chưa xem. */
+    public int getPendingMaterials() {
+        return Math.max(0, totalMaterials - viewedMaterials);
+    }
+
+    /** Phần trăm tiến độ (0-100), dùng cho progress bar. */
+    public int getProgressPercent() {
+        if (totalMaterials == 0) return 0;
+        return (int) Math.round((viewedMaterials * 100.0) / totalMaterials);
+    }
 }

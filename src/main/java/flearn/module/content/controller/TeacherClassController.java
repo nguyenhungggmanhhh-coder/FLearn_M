@@ -92,6 +92,20 @@ public class TeacherClassController {
         return "redirect:/teacher/classes";
     }
 
+    /** [FEAT-04] Teacher toggle mã mời ẩn/hiện + auto-hide 15 phút. */
+    @PostMapping("/classes/{id}/toggle-invite-code")
+    public String toggleInviteCode(@PathVariable Integer id,
+                                   @AuthenticationPrincipal CustomUserDetails userDetails,
+                                   RedirectAttributes ra) {
+        try {
+            classroomService.toggleTeacherInviteCode(id, userDetails.getUser());
+            ra.addFlashAttribute("successMsg", "Dã cập nhật hiển thị mã mời.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/teacher/classes/" + id;
+    }
+
     // ==========================================
     // MODULE 3: Roadmap management
     // ==========================================

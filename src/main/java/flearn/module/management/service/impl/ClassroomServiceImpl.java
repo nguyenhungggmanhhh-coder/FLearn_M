@@ -231,4 +231,35 @@ public class ClassroomServiceImpl implements ClassroomService {
         }
         throw new BusinessException("Không thể tạo mã lớp. Vui lòng thử lại.");
     }
+
+    @Override
+    @Transactional
+    public void toggleInviteCodeVisible(Integer classId) {
+        Classroom classroom = findClassById(classId);
+        doToggleInviteCode(classroom);
+        classroomRepository.save(classroom);
+    }
+
+    @Override
+    @Transactional
+    public void toggleTeacherInviteCode(Integer classId, User teacher) {
+        Classroom classroom = findTeacherClassById(classId, teacher);
+        doToggleInviteCode(classroom);
+        classroomRepository.save(classroom);
+    }
+
+    /**
+     * Logic toggle mã mời:
+     * - Nếu hiện đang visible → tắt (visible=false)
+     * - Nếu đang ẩn → bật + cập nhật inviteCodeGeneratedAt = now
+     *   (Frontend tự ẩn sau 15 phút tới bằng countdown JS)
+     */
+    private void doToggleInviteCode(Classroom classroom) {
+        boolean currentlyVisible = Boolean.TRUE.equals(classroom.getInviteCodeVisible());
+        classroom.setInviteCodeVisible(!currentlyVisible);
+        if (!currentlyVisible) {
+            // Đang bật lên – stamp thời gian để auto-hide sau 15 phút
+            classroom.setInviteCodeGeneratedAt(new java.util.Date());
+        }
+    }
 }

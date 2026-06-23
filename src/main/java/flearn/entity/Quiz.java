@@ -50,6 +50,14 @@ public class Quiz {
     @Builder.Default
     private Integer maxAttempts = 1;
 
+    /**
+     * [FEAT-01] Ngân hàng đề: Số lượng câu hỏi được chọn ngẫu nhiên cho mỗi lần thi.
+     * null = lấy tất cả câu hỏi (hành vi cũ, tương thích ngược).
+     * VD: 20 = lấy ngẫu nhiên 20 câu từ toàn bộ ngân hàng.
+     */
+    @Column(name = "[QuestionPoolSize]")
+    private Integer questionPoolSize;
+
     @Column(name = "[VideoTimestamp]")
     private Integer videoTimestamp; // Giây trong video, null = không gate quiz
 

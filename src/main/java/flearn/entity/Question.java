@@ -43,8 +43,24 @@ public class Question {
     @Column(name = "[OptionD]", columnDefinition = "NVARCHAR(500)")
     private String optionD;
 
-    @Column(name = "[CorrectAnswer]", nullable = false, length = 10)
+    /**
+     * Đáp án đúng:
+     * - MULTIPLE_CHOICE: "A", "B", "C" hoặc "D"
+     * - TRUE_FALSE: "TRUE" hoặc "FALSE"
+     * - MULTI_SELECT: [FEAT-02] đa đáp án, VD: "A,C" hoặc "A,B,D"
+     * - ESSAY: [FEAT-02] null hoặc trống (chấm thủ công)
+     */
+    @Column(name = "[CorrectAnswer]", length = 50)
     private String correctAnswer;
+
+    /** [FEAT-02] Đáp án mẫu cho câu tự luận – giáo viên nhập, dùng tham khảo khi chấm. */
+    @Column(name = "[ModelAnswer]", columnDefinition = "NVARCHAR(MAX)")
+    private String modelAnswer;
+
+    /** [FEAT-02] Trọng số điểm câu hỏi (mặc định 1.0). */
+    @Column(name = "[ScoreWeight]")
+    @Builder.Default
+    private Double scoreWeight = 1.0;
 
     @Column(name = "[OrderIndex]")
     @Builder.Default
@@ -59,5 +75,9 @@ public class Question {
         if (orderIndex == null) {
             orderIndex = 0;
         }
+        if (scoreWeight == null) {
+            scoreWeight = 1.0;
+        }
+        // ESSAY không cần correctAnswer – cho phép null
     }
 }

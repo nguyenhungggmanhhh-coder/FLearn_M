@@ -5,12 +5,16 @@ import flearn.module.management.dto.response.EnrollmentResponse;
 import flearn.enums.ClassStatus;
 import flearn.entity.Classroom;
 import flearn.entity.Enrollment;
+import flearn.entity.Lesson;
 import flearn.enums.EnrollmentStatus;
 import flearn.entity.User;
 import flearn.common.exception.BusinessException;
 import flearn.module.management.mapper.EnrollmentMapper;
 import flearn.repository.ClassroomRepository;
 import flearn.repository.EnrollmentRepository;
+import flearn.repository.LessonRepository;
+import flearn.repository.MaterialRepository;
+import flearn.repository.MaterialTrackingRepository;
 import flearn.module.management.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,15 +29,36 @@ import java.util.Locale;
 @Transactional(readOnly = true)
 @Validated
 public class StudentServiceImpl implements StudentService {
-    private final EnrollmentRepository enrollmentRepository;
-    private final ClassroomRepository classroomRepository;
-    private final EnrollmentMapper enrollmentMapper;
+    private final EnrollmentRepository     enrollmentRepository;
+    private final ClassroomRepository      classroomRepository;
+    private final LessonRepository         lessonRepository;
+    private final MaterialRepository       materialRepository;
+    private final MaterialTrackingRepository materialTrackingRepository;
+    private final EnrollmentMapper         enrollmentMapper;
 
     @Override
     public List<EnrollmentResponse> getJoinedClasses(User student) {
-        return enrollmentMapper.toResponseList(
-                enrollmentRepository.findActiveClassesForStudent(student, EnrollmentStatus.ACTIVE, ClassStatus.ACTIVE)
-        );
+        List<Enrollment> enrollments = enrollmentRepository
+                .findActiveClassesForStudent(student, EnrollmentStatus.ACTIVE, ClassStatus.ACTIVE);
+
+        return enrollments.stream().map(enrollment -> {
+            EnrollmentResponse resp = enrollmentMapper.toResponse(enrollment);
+
+            // Tính tiến độ học tập cho thẻ lớp
+            Classroom classroom = enrollment.getClassRoom();
+            List<Lesson> lessons = lessonRepository.findByClassroom(classroom);
+
+            if (lessons.isEmpty()) {
+                resp.setTotalMaterials(0);
+                resp.setViewedMaterials(0);
+            } else {
+                long total  = materialRepository.countPublishedByLessons(lessons);
+                long viewed = materialTrackingRepository.countViewedByStudentInLessons(student, lessons);
+                resp.setTotalMaterials((int) total);
+                resp.setViewedMaterials((int) Math.min(viewed, total));
+            }
+            return resp;
+        }).toList();
     }
 
     @Override

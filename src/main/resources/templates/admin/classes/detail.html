@@ -60,8 +60,37 @@
                                 </tr>
                             </table>
                             
-                            <div class="mt-4 gap-2 d-flex">
-                                <a th:href="@{'/admin/classes/' + ${classroom.classId} + '/edit'}" class="btn btn-brand"><i class="bi bi-pencil-square me-2"></i> Chỉnh sửa</a>
+                            <!-- [FEAT-04] Toggle mã mời + countdown 15 phút -->
+                            <div class="mt-3 p-3 rounded" style="background:#f8f9fa; border:1px solid #e9ecef;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-semibold small">Mã mời:</span>
+                                        <span id="inviteCodeDisplay"
+                                              class="badge bg-secondary px-2 py-1 fs-6 ms-2"
+                                              th:text="${classroom.inviteCode}"
+                                              th:style="${classroom.inviteCodeVisible} ? '' : 'filter:blur(5px);'">CODE</span>
+                                        <span id="countdownBadge" class="badge bg-warning ms-2 d-none"></span>
+                                    </div>
+                                    <form th:action="@{'/admin/classes/' + ${classroom.classId} + '/toggle-invite-code'}"
+                                          method="post" class="d-inline">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                        <button type="submit" class="btn btn-sm"
+                                                th:classappend="${classroom.inviteCodeVisible} ? 'btn-outline-warning' : 'btn-outline-success'">
+                                            <i class="bi" th:classappend="${classroom.inviteCodeVisible} ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+                                            <span th:text="${classroom.inviteCodeVisible} ? 'Ẩn mã' : 'Hiện mã'">Hiện mã</span>
+                                        </button>
+                                    </form>
+                                </div>
+                                <small class="text-muted d-block mt-1">Mã tự ẩn sau 15 phút kể từ lần bật gần nhất.</small>
+                            </div>
+
+                            <div class="mt-4 gap-2 d-flex flex-wrap">
+                                <a th:href="@{'/admin/classes/' + ${classroom.classId} + '/edit'}" class="btn btn-brand">
+                                    <i class="bi bi-pencil-square me-2"></i>Chỉnh sửa
+                                </a>
+                                <a th:href="@{'/admin/classes/' + ${classroom.classId} + '/schedules'}" class="btn btn-outline-primary">
+                                    <i class="bi bi-calendar-week me-2"></i>Quản lý lịch học
+                                </a>
                             </div>
                         </div>
                     </section>
@@ -113,5 +142,33 @@
     </div>
 </div>
 <div th:replace="~{fragments/scripts :: scripts}"></div>
+
+<!-- [FEAT-04] Countdown 15 phút tự ẩn mã mời -->
+<script th:if="${classroom.inviteCodeVisible and classroom.inviteCodeGeneratedAt != null}">
+(function() {
+    const generatedAt = /*[[${classroom.inviteCodeGeneratedAt.time}]]*/ 0; // ms epoch
+    const HIDE_AFTER_MS = 15 * 60 * 1000; // 15 phút
+    const badge = document.getElementById('countdownBadge');
+    const display = document.getElementById('inviteCodeDisplay');
+
+    function tick() {
+        const remaining = HIDE_AFTER_MS - (Date.now() - generatedAt);
+        if (remaining <= 0) {
+            // Hết 15 phút – ẩn mã bằng blur
+            if (display) display.style.filter = 'blur(5px)';
+            if (badge) { badge.textContent = 'Đã ẩn'; badge.classList.remove('d-none'); }
+            return;
+        }
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        if (badge) {
+            badge.classList.remove('d-none');
+            badge.textContent = `Ẩn sau ${mins}:${String(secs).padStart(2, '0')}`;
+        }
+        setTimeout(tick, 1000);
+    }
+    tick();
+})();
+</script>
 </body>
 </html>

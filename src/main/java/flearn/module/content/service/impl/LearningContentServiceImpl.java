@@ -48,7 +48,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 @Validated
 public class LearningContentServiceImpl implements LearningContentService {
-    private static final Path MATERIAL_UPLOAD_DIR = Path.of("uploads", "materials");
+    private static final Path MATERIAL_UPLOAD_DIR = Path.of("uploads", "materials").toAbsolutePath().normalize();
 
     private final RoadmapRepository roadmapRepository;
     private final LessonRepository lessonRepository;
@@ -405,28 +405,59 @@ public class LearningContentServiceImpl implements LearningContentService {
         if (file == null || file.isEmpty()) {
             return null;
         }
+        // [FEAT-05] Chỉ chấp nhận file PDF
+        String originalName = StringUtils.cleanPath(file.getOriginalFilename() == null ? "material" : file.getOriginalFilename());
+        String lowerName = originalName.toLowerCase();
+        String contentType = file.getContentType() == null ? "" : file.getContentType().toLowerCase();
+        if (!lowerName.endsWith(".pdf") || !contentType.contains("pdf")) {
+            throw new BusinessException("Chỉ chấp nhận file PDF. Vui lòng upload file có đuôi .pdf.");
+        }
         try {
             Files.createDirectories(MATERIAL_UPLOAD_DIR);
-            String originalName = StringUtils.cleanPath(file.getOriginalFilename() == null ? "material" : file.getOriginalFilename());
             String storedName = UUID.randomUUID() + "-" + originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
             Path target = MATERIAL_UPLOAD_DIR.resolve(storedName).normalize();
             if (!target.startsWith(MATERIAL_UPLOAD_DIR)) {
-                throw new BusinessException("Ten file upload khong hop le.");
+                throw new BusinessException("Tên file upload không hợp lệ.");
             }
             file.transferTo(target);
             return "/uploads/materials/" + storedName;
         } catch (IOException exception) {
-            throw new BusinessException("Khong the luu file upload.");
+            throw new BusinessException("Không thể lưu file upload.");
         }
     }
 
     private void validateMaterialContent(Material material) {
-        boolean linkType = material.getType() == MaterialType.YOUTUBE_LINK || material.getType() == MaterialType.OTHER_LINK;
+        // [FEAT-05] VIDEO bắt buộc phải có link, không cho upload file
+        if (material.getType() == MaterialType.VIDEO) {
+            if (material.getExternalUrl() == null || material.getExternalUrl().isBlank()) {
+                throw new BusinessException("Tài liệu dạng VIDEO phải nhập URL video. Không hỗ trợ upload file video trực tiếp.");
+            }
+        }
+        boolean linkType = material.getType() == MaterialType.YOUTUBE_LINK
+                || material.getType() == MaterialType.OTHER_LINK
+                || material.getType() == MaterialType.VIDEO;
         if (linkType && (material.getExternalUrl() == null || material.getExternalUrl().isBlank())) {
-            throw new BusinessException("Material dang link can co externalUrl.");
+            throw new BusinessException("Material dạng link cần có externalUrl.");
+        }
+        // [FEAT-05] Kiểm tra URL YouTube hợp lệ
+        if (material.getType() == MaterialType.YOUTUBE_LINK) {
+            String url = material.getExternalUrl();
+            if (!isValidYoutubeUrl(url)) {
+                throw new BusinessException("URL YouTube không hợp lệ. Chỉ chấp nhận liên kết từ youtube.com hoặc youtu.be.");
+            }
         }
         if (!linkType && material.getFilePath() == null && (material.getExternalUrl() == null || material.getExternalUrl().isBlank())) {
-            throw new BusinessException("Material can co file upload hoac externalUrl.");
+            throw new BusinessException("Material cần có file upload hoặc externalUrl.");
         }
+    }
+
+    /** [FEAT-05] Validate URL YouTube theo pattern youtube.com hoặc youtu.be. */
+    private boolean isValidYoutubeUrl(String url) {
+        if (url == null || url.isBlank()) return false;
+        String lower = url.trim().toLowerCase();
+        return lower.contains("youtube.com/watch") ||
+               lower.contains("youtube.com/embed") ||
+               lower.contains("youtu.be/") ||
+               lower.contains("youtube.com/shorts");
     }
 }

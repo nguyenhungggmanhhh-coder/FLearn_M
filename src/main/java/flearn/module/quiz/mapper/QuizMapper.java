@@ -15,6 +15,7 @@ public interface QuizMapper {
     @Mapping(target = "classId", source = "lesson.classroom.classId")
     @Mapping(target = "deadlinePassed", ignore = true)
     @Mapping(target = "submittedAttempts", ignore = true)
+    @Mapping(target = "questions", ignore = true) // Populated manually in QuizServiceImpl
     QuizResponse toResponse(Quiz quiz);
 
     List<QuizResponse> toResponseList(List<Quiz> quizzes);

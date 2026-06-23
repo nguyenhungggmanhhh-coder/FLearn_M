@@ -15,4 +15,7 @@ public interface LessonRepository extends JpaRepository<Lesson, Integer> {
     List<Lesson> findByRoadmapOrderByOrderIndexAscCreatedAtAsc(Roadmap roadmap);
 
     List<Lesson> findByRoadmapAndVisibleTrueOrderByOrderIndexAscCreatedAtAsc(Roadmap roadmap);
+
+    /** Lấy tất cả lesson của lớp (dùng cho tiến độ lớp). */
+    List<Lesson> findByClassroom(Classroom classroom);
 }

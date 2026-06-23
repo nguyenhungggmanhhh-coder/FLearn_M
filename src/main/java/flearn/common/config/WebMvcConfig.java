@@ -18,9 +18,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(maintenanceInterceptor);
     }
 
+    //
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(Path.of("uploads").toAbsolutePath().toUri().toString());
+                .addResourceLocations(Path.of("uploads").toAbsolutePath().toUri().toString() + "/");
     }
 }

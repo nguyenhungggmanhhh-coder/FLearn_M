@@ -41,6 +41,19 @@ public class Lesson {
     @Builder.Default
     private Boolean visible = true;
 
+    /**
+     * Mốc thời gian bài học được mở cho sinh viên xem.
+     * null = mở ngay. Thường gắn với ngày diễn ra buổi học theo ClassSchedule.
+     */
+    @Column(name = "[AvailableFrom]")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date availableFrom;
+
+    /** Hạn chồt sinh viên phải hoàn thành bài học này. */
+    @Column(name = "[Deadline]")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deadline;
+
     @Column(name = "[CreatedAt]", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;

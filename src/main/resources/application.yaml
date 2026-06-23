@@ -45,6 +45,13 @@ spring:
       content-type: text/html;charset=UTF-8
 
   # ===============================
+  # DEVTOOLS
+  # ===============================
+  devtools:
+    restart:
+      enabled: false   # Tắt DevTools restart để tránh xung đột MapStruct classloader
+
+  # ===============================
   # ENCODING
   # ===============================
   servlet:
@@ -52,6 +59,10 @@ spring:
       charset: UTF-8
       force: true
       enabled: true
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 55MB
 
   # ===============================
   # SPRING MAIL - GMAIL SMTP
@@ -77,10 +88,11 @@ spring:
 # ===============================
 server:
   port: 8080
+  tomcat:
+    max-http-form-post-size: -1   # -1 = không giới hạn POST size (cho phép upload file lớn)
   servlet:
     session:
       persistent: false   # Tắt ghi session ra file khi restart → tránh StreamCorruptedException
-
 
 # ===============================
 # LOGGING

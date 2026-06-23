@@ -71,14 +71,16 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-2">
+                                        <a th:href="@{'/admin/classes/' + ${classroom.classId}}" class="btn btn-outline-secondary btn-sm" title="Chi tiết"><i class="bi bi-eye"></i></a>
                                         <a th:href="@{'/admin/classes/' + ${classroom.classId} + '/edit'}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil-square"></i> Sửa</a>
+                                        <a th:href="@{'/admin/classes/' + ${classroom.classId} + '/schedules'}" class="btn btn-outline-info btn-sm" title="Lịch học"><i class="bi bi-calendar-week"></i></a>
                                         <form th:action="@{'/admin/classes/' + ${classroom.classId} + '/toggle'}" method="post" class="d-inline">
                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                             <button type="submit" class="btn btn-sm" th:classappend="${classroom.status == 'ACTIVE' ? 'btn-outline-warning' : 'btn-outline-success'}">
                                                 <i class="bi" th:classappend="${classroom.status == 'ACTIVE' ? 'bi-lock-fill' : 'bi-unlock-fill'}"></i> Toggle
                                             </button>
                                         </form>
-                                        <form th:action="@{'/admin/classes/' + ${classroom.classId} + '/delete'}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn đóng lớp học này? Hành động này không thể hoàn tác.');">
+                                        <form th:action="@{'/admin/classes/' + ${classroom.classId} + '/delete'}" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn đóng lớp học này?');">
                                             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                             <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle-fill"></i> Đóng</button>
                                         </form>

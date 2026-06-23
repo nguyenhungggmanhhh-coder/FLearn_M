@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Lịch học – ' + ${classroom.className})}"></head>
+<body class="bg-light">
+<div class="app-container">
+    <div th:replace="~{fragments/sidebar :: sidebar('classes')}"></div>
+    <div class="flex-grow-1 d-flex flex-column" style="min-width: 0;">
+        <div th:replace="~{fragments/topbar :: topbar}"></div>
+
+        <main class="app-shell flex-grow-1 p-4">
+            <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/classes">Lớp học</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{'/admin/classes/' + ${classroom.classId}}"
+                                                   th:text="${classroom.className}">Lớp</a></li>
+                    <li class="breadcrumb-item active">Lịch học</li>
+                </ol>
+            </nav>
+
+            <div class="page-header d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="page-title text-dark">
+                        <i class="bi bi-calendar-week me-2 text-primary"></i>Lịch học tuần
+                    </h1>
+                    <p class="page-subtitle">
+                        Lớp: <strong th:text="${classroom.className}">Lớp</strong> –
+                        Hệ thống tự gửi email nhắc nhở trước 1 ngày và 2 tiếng.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- ─── Danh sách lịch ─── -->
+                <div class="col-lg-7">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title">Lịch học đã thiết lập</h2>
+                        </div>
+                        <div class="panel-body p-0">
+                            <div th:if="${#lists.isEmpty(schedules)}" class="text-muted text-center py-5">
+                                <i class="bi bi-calendar-x" style="font-size:2.5rem; opacity:.4;"></i>
+                                <p class="mt-2">Chưa có lịch học nào. Thêm lịch ở bên phải.</p>
+                            </div>
+                            <div class="table-responsive" th:if="${!#lists.isEmpty(schedules)}">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                    <tr>
+                                        <th>Thứ</th>
+                                        <th>Giờ</th>
+                                        <th>Phòng / Link</th>
+                                        <th>Nhắc nhở</th>
+                                        <th>TT</th>
+                                        <th>Hành động</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="s : ${schedules}">
+                                        <td>
+                                            <span class="badge bg-primary rounded-pill"
+                                                  th:text="${s.dayOfWeekLabel}">Thứ 2</span>
+                                        </td>
+                                        <td>
+                                            <span th:text="${s.startTime}">08:00</span>
+                                            <span th:if="${s.endTime != null}">
+                                                – <span th:text="${s.endTime}">10:00</span>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="text-truncate d-inline-block" style="max-width:160px;"
+                                                  th:text="${s.roomOrLink != null ? s.roomOrLink : '—'}">—</span>
+                                        </td>
+                                        <td>
+                                            <i class="bi bi-bell-fill text-warning me-1"
+                                               title="Nhắc 1 ngày trước"
+                                               th:if="${s.remindOneDayBefore}"></i>
+                                            <i class="bi bi-alarm-fill text-info"
+                                               title="Nhắc 2 tiếng trước"
+                                               th:if="${s.remindTwoHoursBefore}"></i>
+                                        </td>
+                                        <td>
+                                            <span class="badge-status text-uppercase"
+                                                  th:classappend="${s.isActive ? ' badge-active' : ' badge-inactive'}"
+                                                  th:text="${s.isActive ? 'ON' : 'OFF'}">ON</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                <a class="btn btn-outline-primary btn-sm"
+                                                   th:href="@{'/admin/classes/' + ${classroom.classId} + '/schedules/' + ${s.id} + '/edit'}">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <form th:action="@{'/admin/classes/' + ${classroom.classId} + '/schedules/' + ${s.id} + '/toggle'}"
+                                                      method="post" class="d-inline">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                                    <button class="btn btn-sm"
+                                                            th:classappend="${s.isActive ? 'btn-outline-warning' : 'btn-outline-success'}"
+                                                            th:title="${s.isActive ? 'Tắt lịch' : 'Bật lịch'}">
+                                                        <i class="bi" th:classappend="${s.isActive ? 'bi-pause-fill' : 'bi-play-fill'}"></i>
+                                                    </button>
+                                                </form>
+                                                <form th:action="@{'/admin/classes/' + ${classroom.classId} + '/schedules/' + ${s.id} + '/delete'}"
+                                                      method="post" class="d-inline"
+                                                      onsubmit="return confirm('Xóa lịch học này?')">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                                    <button class="btn btn-outline-danger btn-sm">
+                                                        <i class="bi bi-trash3-fill"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- ─── Form thêm lịch ─── -->
+                <div class="col-lg-5">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <h2 class="panel-title"><i class="bi bi-plus-circle me-2"></i>Thêm lịch học</h2>
+                        </div>
+                        <div class="panel-body">
+                            <form th:action="@{'/admin/classes/' + ${classroom.classId} + '/schedules/create'}"
+                                  method="post" th:object="${scheduleRequest}">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold" for="dayOfWeek">Thứ trong tuần <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="dayOfWeek" th:field="*{dayOfWeek}" required>
+                                        <option value="">-- Chọn thứ --</option>
+                                        <option th:each="entry : ${daysOfWeek}"
+                                                th:value="${entry.key}"
+                                                th:text="${entry.value}">Thứ 2</option>
+                                    </select>
+                                </div>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col">
+                                        <label class="form-label fw-semibold" for="startTime">Giờ bắt đầu <span class="text-danger">*</span></label>
+                                        <input type="time" class="form-control" id="startTime" th:field="*{startTime}" required>
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label fw-semibold" for="endTime">Giờ kết thúc</label>
+                                        <input type="time" class="form-control" id="endTime" th:field="*{endTime}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold" for="roomOrLink">Phòng / Link học</label>
+                                    <input type="text" class="form-control" id="roomOrLink" th:field="*{roomOrLink}"
+                                           placeholder="VD: Phòng A205 hoặc https://meet.google.com/...">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold" for="note">Ghi chú (tùy chọn)</label>
+                                    <textarea class="form-control" id="note" th:field="*{note}" rows="2"
+                                              placeholder="Nội dung buổi học, yêu cầu chuẩn bị..."></textarea>
+                                </div>
+
+                                <!-- Nhắc nhở -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Cài đặt nhắc nhở email</label>
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input" type="checkbox" id="remindOneDay"
+                                               th:field="*{remindOneDayBefore}">
+                                        <label class="form-check-label" for="remindOneDay">
+                                            <i class="bi bi-bell-fill text-warning me-1"></i>Nhắc trước 1 ngày
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="remindTwoHours"
+                                               th:field="*{remindTwoHoursBefore}">
+                                        <label class="form-check-label" for="remindTwoHours">
+                                            <i class="bi bi-alarm-fill text-info me-1"></i>Nhắc trước 2 tiếng
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-brand w-100">
+                                    <i class="bi bi-plus-lg me-2"></i>Thêm lịch học
+                                </button>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <footer th:replace="~{fragments/footer :: footer}"></footer>
+    </div>
+</div>
+<div th:replace="~{fragments/scripts :: scripts}"></div>
+</body>
+</html>

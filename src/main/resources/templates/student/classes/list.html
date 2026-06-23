@@ -6,10 +6,10 @@
     <div th:replace="~{fragments/sidebar :: sidebar('classes')}"></div>
     <div class="flex-grow-1 d-flex flex-column" style="min-width: 0;">
         <div th:replace="~{fragments/topbar :: topbar}"></div>
-        
+
         <main class="app-shell flex-grow-1 p-4">
             <div th:replace="~{fragments/alerts :: alerts}"></div>
-            
+
             <div class="page-header d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="page-title text-dark">Lớp học của tôi</h1>
@@ -19,41 +19,103 @@
                     <i class="bi bi-door-open-fill me-2"></i>Tham gia lớp học
                 </a>
             </div>
-            
+
             <div class="row g-4">
                 <div class="col-md-6 col-xl-4" th:each="enrollment : ${enrollments}">
-                    <article class="class-card d-flex flex-column">
+                    <article class="class-card d-flex flex-column h-100">
                         <div class="card-body p-4 flex-grow-1 d-flex flex-column justify-content-between">
                             <div>
+                                <!-- Header: tên lớp + badge -->
                                 <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                                    <div>
-                                        <h2 class="h5 fw-bold mb-1 text-dark text-truncate" style="max-width: 200px;" th:text="${enrollment.classRoom.className}">Class</h2>
-                                        <div class="text-muted small">Mã lớp: <strong class="text-secondary" th:text="${enrollment.classRoom.classCode}">CODE</strong></div>
+                                    <div class="flex-grow-1" style="min-width:0;">
+                                        <h2 class="h5 fw-bold mb-1 text-dark text-truncate"
+                                            th:text="${enrollment.classRoom.className}">Class</h2>
+                                        <div class="text-muted small">Mã lớp:
+                                            <strong class="text-secondary"
+                                                    th:text="${enrollment.classRoom.classCode}">CODE</strong>
+                                        </div>
                                     </div>
-                                    <span class="badge bg-success px-2 py-1 rounded text-uppercase" style="font-size: 0.7rem; font-weight: 700;">Đã tham gia</span>
+                                    <span class="badge bg-success px-2 py-1 rounded text-uppercase flex-shrink-0"
+                                          style="font-size: 0.7rem; font-weight: 700;">Đã tham gia</span>
                                 </div>
-                                <p class="mb-3 text-dark small">
-                                    <i class="bi bi-person-workspace text-primary me-2"></i>Giảng viên: 
+
+                                <!-- Giảng viên -->
+                                <p class="mb-2 text-dark small">
+                                    <i class="bi bi-person-workspace text-primary me-2"></i>Giảng viên:
                                     <strong th:text="${enrollment.classRoom.teacher != null ? enrollment.classRoom.teacher.fullName : 'Chưa gán'}">Teacher</strong>
                                 </p>
-                                <p class="text-muted small mb-4" style="height: 4.5em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;" th:text="${enrollment.classRoom.description != null and !#strings.isEmpty(enrollment.classRoom.description) ? enrollment.classRoom.description : 'Chưa có mô tả chi tiết cho lớp học này.'}">Description</p>
+
+                                <!-- Mô tả -->
+                                <p class="text-muted small mb-3"
+                                   style="height: 3.6em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
+                                   th:text="${enrollment.classRoom.description != null and !#strings.isEmpty(enrollment.classRoom.description)
+                                             ? enrollment.classRoom.description : 'Chưa có mô tả chi tiết cho lớp học này.'}">Description</p>
+
+                                <!-- ✅ Progress stats -->
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="small fw-semibold text-dark">
+                                            <i class="bi bi-book-fill text-primary me-1"></i>Tiến độ học tập
+                                        </span>
+                                        <span class="small text-muted">
+                                            <span class="fw-bold text-primary" th:text="${enrollment.viewedMaterials}">0</span>
+                                            /
+                                            <span th:text="${enrollment.totalMaterials}">0</span> bài
+                                        </span>
+                                    </div>
+                                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                                        <div class="progress-bar bg-primary"
+                                             role="progressbar"
+                                             th:style="'width: ' + ${enrollment.progressPercent} + '%'"
+                                             th:attr="aria-valuenow=${enrollment.progressPercent}"
+                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <!-- Badge thống kê -->
+                                    <div class="d-flex gap-2 mt-2 flex-wrap">
+                                        <span class="badge rounded-pill"
+                                              style="font-size:0.7rem; background:#e8f0fe; color:#1a56db;">
+                                            <i class="bi bi-check2-circle me-1"></i>
+                                            Đã xem: <span th:text="${enrollment.viewedMaterials}">0</span>
+                                        </span>
+                                        <span class="badge rounded-pill"
+                                              style="font-size:0.7rem; background:#fef3c7; color:#92400e;"
+                                              th:if="${enrollment.pendingMaterials > 0}">
+                                            <i class="bi bi-clock me-1"></i>
+                                            Còn lại: <span th:text="${enrollment.pendingMaterials}">0</span>
+                                        </span>
+                                        <span class="badge rounded-pill"
+                                              style="font-size:0.7rem; background:#d1fae5; color:#065f46;"
+                                              th:if="${enrollment.progressPercent == 100}">
+                                            <i class="bi bi-trophy-fill me-1"></i>Hoàn thành!
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <div class="pt-3 border-top text-end">
-                                <a class="btn btn-brand w-100 py-2" th:href="@{'/student/classes/' + ${enrollment.classRoom.classId} + '/learning'}">
+
+                            <!-- Footer: nút hành động -->
+                            <div class="pt-3 border-top">
+                                <a class="btn btn-brand w-100 py-2"
+                                   th:href="@{'/student/classes/' + ${enrollment.classRoom.classId} + '/learning'}">
                                     <i class="bi bi-book-half me-2"></i>Xem học liệu
                                 </a>
                             </div>
                         </div>
                     </article>
                 </div>
-                
+
                 <div th:if="${#lists.isEmpty(enrollments)}" class="col-12">
-                    <div class="empty-state text-muted text-center py-4">Bạn chưa tham gia lớp học hoạt động nào. Hãy nhập mã lớp học để gửi yêu cầu tham gia!</div>
+                    <div class="empty-state text-muted text-center py-5">
+                        <i class="bi bi-journal-x" style="font-size:3rem; opacity:.4;"></i>
+                        <p class="mt-3">Bạn chưa tham gia lớp học hoạt động nào.<br>
+                            Hãy nhập mã lớp học để gửi yêu cầu tham gia!</p>
+                        <a href="/student/classes/join" class="btn btn-brand mt-2">
+                            <i class="bi bi-door-open-fill me-2"></i>Tham gia lớp học
+                        </a>
+                    </div>
                 </div>
             </div>
         </main>
-        
+
         <footer th:replace="~{fragments/footer :: footer}"></footer>
     </div>
 </div>

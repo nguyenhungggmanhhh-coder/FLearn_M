@@ -138,12 +138,23 @@ public class AdminClassController {
     @PostMapping("/{id}/delete")
     public String deleteClass(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
         try {
-            // Soft delete by setting CLOSED status
-            classroomService.softDeleteClass(id, null); // Teacher parameter is null since Admin deletes
+            classroomService.softDeleteClass(id, null);
             redirectAttributes.addFlashAttribute("successMsg", "Da dong lop hoc.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMsg", e.getMessage());
         }
         return "redirect:/admin/classes";
+    }
+
+    /** [FEAT-04] Admin toggle mã mời ẩn/hiện kết hợp auto-hide 15 phút. */
+    @PostMapping("/{id}/toggle-invite-code")
+    public String toggleInviteCode(@PathVariable Integer id, RedirectAttributes ra) {
+        try {
+            classroomService.toggleInviteCodeVisible(id);
+            ra.addFlashAttribute("successMsg", "Dã cập nhật hiển thị mã mời.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMsg", e.getMessage());
+        }
+        return "redirect:/admin/classes/" + id;
     }
 }
